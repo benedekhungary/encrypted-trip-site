@@ -93,3 +93,75 @@
   const obs=new MutationObserver(ms=>{if(ms.some(m=>m.type==='attributes'&&m.attributeName==='class'&&m.target.classList?.contains('day'))){['three','two'].forEach(build)}});
   qa('.day').forEach(d=>obs.observe(d,{attributes:true,attributeFilter:['class']}));
 })();
+
+(()=>{
+  const q=(s,r=document)=>r.querySelector(s),qa=(s,r=document)=>[...r.querySelectorAll(s)];
+  const isDay=(x,n,date)=>x&&((Number(x.d)===n)||String(x.date||'').replace('.','/').includes(date));
+  const balatonMap='https://www.google.com/maps/search/?api=1&query=Lake%20Balaton%2C%20Hungary';
+  const sundayPlan=[
+    ['בוקר','נשארים באזור אגם בלטון — אין מעבר ליעד הבא'],
+    ['יום','יום גמיש באזור בלטון: חוף / אטרקציה / טיול קצר לפי הקצב ומזג האוויר'],
+    ['ערב','לינה נוספת באזור בלטון']
+  ];
+  const sundayNote='עדכון מסלול: ביום א׳ 23.08 נשארים יום נוסף באזור אגם בלטון וגם הלילה ישנים בבלטון. היציאה ליעד הבא נדחית לבוקר יום ב׳ 24.08.';
+  const groups=[];
+  try{if(typeof three!=='undefined'&&Array.isArray(three))groups.push(three)}catch(e){}
+  try{if(typeof two!=='undefined'&&Array.isArray(two))groups.push(two)}catch(e){}
+  try{if(typeof trip!=='undefined'&&Array.isArray(trip))groups.push(trip)}catch(e){}
+  groups.forEach(arr=>{
+    const prev=arr.find(d=>isDay(d,2,'22/08'));
+    arr.forEach(day=>{
+      if(isDay(day,3,'23/08')){
+        if(Array.isArray(day.sched))day.sched=sundayPlan.map(x=>x.slice());
+        if(Array.isArray(day.a))day.a=sundayPlan.map(x=>({time:x[0],name:x[1]}));
+        ['hotel','lodging','stay','sleep','overnight','accommodation','base'].forEach(k=>{
+          if(prev&&Object.prototype.hasOwnProperty.call(prev,k))day[k]=(prev[k]&&typeof prev[k]==='object')?{...prev[k]}:prev[k];
+        });
+        if(Object.prototype.hasOwnProperty.call(day,'title'))day.title='יום נוסף בבלטון';
+        if(Object.prototype.hasOwnProperty.call(day,'city'))day.city='בלטון';
+        if(Object.prototype.hasOwnProperty.call(day,'place'))day.place='אגם בלטון';
+        if(typeof day.map==='string')day.map=balatonMap;
+        else if(day.map&&typeof day.map==='object')day.map={...day.map,label:'יום נוסף באזור אגם בלטון',url:balatonMap};
+        if(Object.prototype.hasOwnProperty.call(day,'note'))day.note=sundayNote;
+        if(Object.prototype.hasOwnProperty.call(day,'rec'))day.rec=sundayNote;
+        day.liveUpdate=sundayNote;
+      }
+      if(isDay(day,4,'24/08')){
+        const monday='היום יוצאים מאזור בלטון לאחר הלינה הנוספת של 23.08. ';
+        if(Object.prototype.hasOwnProperty.call(day,'note'))day.note=monday+String(day.note||'');
+        day.liveStart='יציאה מאזור בלטון בבוקר 24.08';
+      }
+    });
+  });
+  const dayNum=el=>Number(el.dataset.day||q('.num',el)?.textContent||q('.daynum',el)?.textContent||0);
+  const patchDom=()=>{
+    qa('.day').forEach(day=>{
+      const txt=day.textContent||'',n=dayNum(day);
+      if(n===3||txt.includes('23/08')||txt.includes('23.08')){
+        qa('.schedule .row,.activity',day).forEach(r=>{r.style.display='none';r.classList.remove('taskRow')});
+        qa('.hotelBox,.hotel,.lodging,.stay,.sleep,.accommodation',day).forEach(el=>{if(!/בלטון|Balaton/i.test(el.textContent||''))el.style.display='none'});
+        const map=qa('a[href*="google.com/maps"]',day)[0];
+        if(map){map.href=balatonMap;const small=q('small',map);if(small)small.textContent='יום נוסף באזור אגם בלטון'}
+        if(!q('.liveBalaton23',day)){
+          const body=q('.body,.day-body',day)||day;
+          const card=document.createElement('div');
+          card.className='liveBalaton23';
+          card.style.cssText='margin:12px 0;padding:16px;border-radius:14px;background:#eaf6ff;border:1px solid #afd4ea;box-shadow:0 4px 14px #00000010';
+          card.innerHTML='<div style="font-weight:900;font-size:17px;margin-bottom:8px">🌊 עדכון לכל המסלולים — יום א׳ 23.08</div><div style="font-weight:800;margin-bottom:8px">נשארים יום נוסף באזור אגם בלטון וגם הלילה ישנים בבלטון.</div><div style="line-height:1.8">בוקר: נשארים באזור בלטון<br>יום: יום גמיש — חוף / אטרקציה / טיול קצר לפי הקצב<br>ערב: לינה נוספת בבלטון<br><strong>המעבר ליעד הבא נדחה לבוקר יום ב׳ 24.08.</strong></div>';
+          body.insertBefore(card,body.firstChild);
+        }
+      }
+      if(n===4||txt.includes('24/08')||txt.includes('24.08')){
+        if(!q('.liveBalatonDeparture24',day)){
+          const body=q('.body,.day-body',day)||day;
+          const note=document.createElement('div');
+          note.className='liveBalatonDeparture24';
+          note.style.cssText='margin:10px 0;padding:11px 13px;border-radius:12px;background:#fff7df;border:1px solid #ead28a;font-weight:800';
+          note.textContent='עדכון נקודת יציאה: הבוקר מתחיל בבלטון, לאחר הלינה הנוספת של 23.08.';
+          body.insertBefore(note,body.firstChild);
+        }
+      }
+    });
+  };
+  patchDom();setTimeout(patchDom,250);setTimeout(patchDom,900);setTimeout(patchDom,1800);
+})();
