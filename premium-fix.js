@@ -1,6 +1,12 @@
 (()=>{
   const q=(s,r=document)=>r.querySelector(s),qa=(s,r=document)=>[...r.querySelectorAll(s)];
   const liveMap='https://www.google.com/maps/dir/?api=1&origin=Budapest%20Ferenc%20Liszt%20International%20Airport&destination=Budapest%2C%20Hungary&travelmode=driving';
+  const visited22Map='https://www.google.com/maps/dir/?api=1&origin=Tihany%2C%20Hungary&waypoints=46.956328%2C17.902622&destination=BalatoniBob%20Leisure%20Park%2C%20Balatonf%C5%B1zf%C5%91%2C%20Hungary&travelmode=driving';
+  const visited22=[
+    {name:'טיהני (Tihany)',detail:'חצי האי טיהני'},
+    {name:'Esterházy Beach and Waterpark',detail:'Balatonfüred · 46.956328, 17.902622'},
+    {name:'BalatoniBob — מזחלות הרים',detail:'Balatonfűzfő'}
+  ];
   const isDay=(x,n,date)=>x&&((Number(x.d)===n)||String(x.date||'').replace('.','/').includes(date));
   const staleCarPickup=s=>/איסוף.*רכב|לאסוף.*רכב|סניף.*רכב|עדיפות.*שדה התעופה/.test(String(s||''));
   const patchData=()=>{
@@ -30,6 +36,12 @@
       if(isDay(day,2,'22/08')){
         if(Array.isArray(day.sched))day.sched=day.sched.filter(r=>!staleCarPickup(Array.isArray(r)?r.join(' '):r));
         if(Array.isArray(day.a))day.a=day.a.filter(a=>!staleCarPickup((a&&a.name)||a));
+        day.actualVisited=visited22.map(x=>({...x}));
+        if(typeof day.map==='string')day.map=visited22Map;
+        else if(day.map&&typeof day.map==='object')day.map={...day.map,label:'טיהני → Esterházy Beach → BalatoniBob',url:visited22Map};
+        const actualNote='בפועל ב־22.08 ביקרנו בטיהני, ב־Esterházy Beach and Waterpark בבלטונפיורד וב־BalatoniBob (מזחלות הרים) ב־Balatonfűzfő.';
+        if('note' in day)day.note=actualNote;
+        if('rec' in day)day.rec=actualNote;
       }
       if(isDay(day,3,'23/08')){
         if(Array.isArray(day.sched))day.sched=day.sched.filter(r=>!staleCarPickup(Array.isArray(r)?r.join(' '):r));
@@ -56,7 +68,20 @@
         const map=qa('a[href*="google.com/maps"]',day)[0];if(map){map.href=liveMap;const small=q('small',map);if(small)small.textContent='שדה התעופה בודפשט → מקום הלינה בבודפשט'}
         if(!q('.liveArrivalNote',day)){const body=q('.body,.day-body',day);if(body){const note=document.createElement('div');note.className='liveArrivalNote';note.style.cssText='margin:12px 0;padding:12px 14px;border-radius:12px;background:#eef7f2;border:1px solid #bdd8c8;font-weight:700';note.textContent='עדכון בפועל: איסוף הרכב מתבצע היום בשדה התעופה, עם יציאה צפויה ב־17:30.';body.insertBefore(note,body.firstChild)}}
       }
-      if(n===2||txt.includes('22/08')||txt.includes('22.08'))rows.forEach(r=>{if(staleCarPickup(r.textContent)){r.style.display='none';r.classList.remove('taskRow')}});
+      if(n===2||txt.includes('22/08')||txt.includes('22.08')){
+        rows.forEach(r=>{if(staleCarPickup(r.textContent)){r.style.display='none';r.classList.remove('taskRow')}});
+        const map=qa('a[href*="google.com/maps"]',day)[0];if(map){map.href=visited22Map;const small=q('small',map);if(small)small.textContent='טיהני → Esterházy Beach → BalatoniBob'}
+        if(!q('.actualVisited22',day)){
+          const body=q('.body,.day-body',day);
+          if(body){
+            const card=document.createElement('div');
+            card.className='actualVisited22';
+            card.style.cssText='margin:12px 0;padding:14px 16px;border-radius:14px;background:#eef7f2;border:1px solid #bdd8c8';
+            card.innerHTML=`<div style="font-weight:900;margin-bottom:8px">✅ המקומות שהיינו בהם היום</div><ul style="margin:0 0 10px;padding-right:20px">${visited22.map(x=>`<li style="margin:5px 0"><strong>${x.name}</strong><div style="font-size:13px;opacity:.75">${x.detail}</div></li>`).join('')}</ul><a href="${visited22Map}" target="_blank" rel="noopener" style="font-weight:800">פתיחת מסלול המקומות ב־Google Maps</a>`;
+            body.insertBefore(card,body.firstChild);
+          }
+        }
+      }
       if(n===3||txt.includes('23/08')||txt.includes('23.08'))rows.forEach(r=>{if(staleCarPickup(r.textContent)){r.style.display='none';r.classList.remove('taskRow')}});
     });
   };
