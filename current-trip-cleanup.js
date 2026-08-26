@@ -1,0 +1,1 @@
+(()=>{const replacements=[[' חלופת אוסטריה הוסרה.',''],[' — בלי להחזיר את אוסטריה למסלול.','.']];const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);const nodes=[];while(w.nextNode())nodes.push(w.currentNode);for(const n of nodes){let t=n.nodeValue;for(const [a,b] of replacements)t=t.replaceAll(a,b);n.nodeValue=t}})();
